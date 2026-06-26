@@ -1,0 +1,128 @@
+services:
+  auth-mysql:
+    image: mysql:8.0
+    container_name: auth-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: authdb
+    volumes:
+      - auth-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - mini-todo-network
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:mysql://auth-mysql:3306/authdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      USER_SERVICE_URL: http://user-service:5000
+      AUTH_TOKEN_TTL_MINUTES: 120
+    depends_on:
+      auth-mysql:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+    networks:
+      - mini-todo-network
+
+  todo-mysql:
+    image: mysql:8.0
+    container_name: todo-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tododb
+    volumes:
+      - todo-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - mini-todo-network
+
+  todo-service:
+    build: ./todo-service
+    container_name: todo-service
+    restart: on-failure
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:mysql://todo-mysql:3306/tododb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      AUTH_SERVICE_URL: http://auth-service:8081
+    depends_on:
+      todo-mysql:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - mini-todo-network
+
+  user-postgres:
+    image: postgres:16
+    container_name: user-postgres
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - user-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - mini-todo-network
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    restart: on-failure
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@user-postgres:5432/userdb
+    depends_on:
+      user-postgres:
+        condition: service_healthy
+    networks:
+      - mini-todo-network
+
+  nginx-gateway:
+    build: ./api-gateway
+    container_name: nginx-gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth-service
+      - todo-service
+      - user-service
+    networks:
+      - mini-todo-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - nginx-gateway
+    networks:
+      - mini-todo-network
+
+volumes:
+  auth-mysql-data:
+  todo-mysql-data:
+  user-postgres-data:
+
+networks:
+  mini-todo-network:

@@ -1,0 +1,53 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+:root {
+  --app-bg: #f3f4f6;
+  --app-panel: #ffffff;
+  --app-border: #dde2e8;
+  --app-text: #1f2933;
+  --app-muted: #64748b;
+  --app-primary: #1d4ed8;
+}
+
+body {
+  margin: 0;
+  font-family: Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--app-text);
+  background: var(--app-bg);
+  min-height: 100vh;
+}
+
+.app-shell {
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+}
+
+.card {
+  background: var(--app-panel);
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.nav-btn {
+  border-radius: 0.5rem;
+  border: 1px solid var(--app-border);
+  background: #fff;
+  color: var(--app-text);
+  min-width: 110px;
+}
+
+.nav-btn:hover,
+.active-link {
+  background: var(--app-primary);
+  color: #fff;
+  border-color: var(--app-primary);
+}
+
+code {
+  color: var(--app-primary);
+}
+
+.list-group-item {
+  border-color: var(--app-border);
+}
